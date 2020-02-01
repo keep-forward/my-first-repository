@@ -56,7 +56,7 @@
 
 如下图总结：
 
-![](C:\Users\Administrator\Desktop\NLP任务的一般步骤.jpg)
+![](https://upload-images.jianshu.io/upload_images/1667471-37315f7baaee75f4.jpg)
 
 一般流程按照上图列举明细如下：
 
