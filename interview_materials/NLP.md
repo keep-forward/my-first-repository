@@ -105,4 +105,163 @@
 
 ### （7）模型上线应用
 
-## 4. 
+## 4. 中文分词技术
+
+### 4.1 简介
+
+1.  词是最小的能够独立活动的有意义的语言成分。
+2. 
+
+### 4.2 分词方法
+
+1. **基于规则分词**
+
+   - 正向最大匹配法（Maximum Match Method, MM法）
+
+   - 逆向最大匹配法（Inverse Maximum Match Method，IMM法）
+
+     由于汉语中偏正结构较多，若从后向前匹配，可以适当提高精度。所以IMM比MM的误差要小。
+
+   - 双向最大匹配法
+
+     双向最大匹配规则：
+
+     1. 如果正反分词结果次数不同，则取分词数量较少的那个（如“南京市/长江/大桥”的分词数量为3，而“南京市/长江大桥”的分词数量为2，所以返回分词数量为2的）
+     2. 如果分词结果次数相同：
+        - 分词结果相同，就说明没有歧义，可返回任意一个。
+        - 分词结果不同，返回其中单字较少的那个。如对“研究生命的起源”进行分词，MM法分词结果为“['研究生---','命---','的---','起源---',]”，其中单字个数为2个；而IMM法分词结果为“['研究---','生命---','的---','起源---']”，其中单字个数为1个。所以返回IMM的分词结果。
+
+   - 基于规则分词的优缺点：
+
+     1. 优点：简单高效
+     2. 缺点：词典维护是一个很庞大的工程，网络新词也是层出不穷，很难覆盖到所有词。
+
+   - 
+
+     
+
+2. **基于统计分词**
+
+   2.1 语言模型：n-gram模型，拉普拉斯平滑算法，解决分子分母为0的问题。
+
+   2.2 分词算法：HMM和CRF等。以可采用深度学习网络如CNN、LSTM来发现一些模式和特征。
+
+3. **基于规则+统计分词**
+
+   实际工程应用中，最常用的方式就是先基于词典的方式进行分词，然后再用统计分词方法进行辅助。
+
+   
+
+### 4.3 分词工具jieba
+
+1. 简介
+
+   是先基于词典的方式进行分词，然后再用统计分词方法进行辅助的实现。功能：分词，以及分词之上的关键词提取和词性标注等。
+
+2. 分词模式
+
+   - 精确模式：将句子最精确的切开，适合文本分词。默认模式。jieba.cut(sent, cut_all=False)或者jieba.cut(sent)
+   - 全模式：将句子中所有可以成词的词语都扫描出来，速度快，但不能解决歧义。jieba.cut(sent, cut_all=True)
+   - 搜索引擎模式：在精确模式的基础上，对长词再次切分，提高召回率，适用于搜索引擎分词。jieba.cut_for_search(sent)
+   - 
+
+3. jieba常用方法
+
+   - **添加自定义词典:**
+
+     ```python
+     '''
+     两类：载入词典和调整词典
+     '''
+     (1)载入词典
+     # 加载系统词典
+     jieba.set_dictionary('D:/python_projects/NLP_Learning_data/chineseCutWord/data/dict.txt.big')
+     # 加载用户自定义词典
+     jieba.load_userdict('D:/python_projects/NLP_Learning_data/chineseCutWord/data/user_dict.utf8')
+     (2)调整词典
+     # 调整词典,向词典中添加一个词。freq 和 tag 可以省略，freq 默认为一个计算值
+     jieba.add_word(word, freq=None, tag=None)
+     # 在词典中删除一个词
+     jieba.del_word(word)
+     '''
+     使用 suggest_freq(segment, tune=True) 可调节单个词语的词频，使其（或不能）被分出来。注意：自动计算的词频在使用 HMM 新词发现功能时可能无效。
+     示例：jieba.suggest_freq(('证件照片'), tune=True)
+     '''
+     jieba.suggest_freq(segment, tune=True)
+     
+     ```
+
+   - **词典格式：**
+
+     每一行为三个部分：词语、词频（可省略）、词性（可省略），用空格隔开，顺序不可颠倒。该词典文件需为utf-8编码。
+
+   - **cut()和lcut()：**
+
+     ```python
+     '''
+     此方法接受三个参数: 需要分词的字符串；cut_all 参数用来控制是否采用全模式；HMM 参数用来控制是否使用 HMM 模型;
+     lcut 方法直接返回 list，cut 方法返回一个 可迭代的 generator
+     '''
+     sent = '中文分词是文本处理不可或缺的一步！'
+     print('cut is:', jieba.cut(sent))
+     结果为：cut is: <generator object Tokenizer.cut at 0x02589530>
+     print('精确模式：', '/'.join(jieba.cut(sent)))
+     结果为：精确模式： 中文/分词/是/文本处理/不可或缺/的/一步/！
+     print('lcut is:', jieba.lcut(sent))
+     结果为：lcut is: ['中文', '分词', '是', '文本处理', '不可或缺', '的', '一步', '！']
+     ```
+
+     
+
+   - **jieba.analyse:**关键词提取
+
+     ```python
+     (1). 基于 TF-IDF（term frequency–inverse document frequency） 算法的关键词抽取。
+     # 1. 新建TFIDF实例，idf_path为IDF频率文件，可不填
+     jieba.analyse.TFIDF(idf_path=None) 
+     # 2. 关键词提取所使用的的逆向文件频率（即IDF）文本语料库可以切换成自定义语料库的路径，filename为自定义语料库的路径
+     jieba.analyse.set_idf_path(filename)
+     # 3. 关键词提取所用到的停用词文本语料库可以切换成自定义语料库的路径，filename为自定义语料库的路径
+     jieba.analyse.set_stop_words(filename)
+     # 4. 开始提取关键字
+     '''
+     第一个参数：待提取关键词的文本
+     第二个参数：返回几个 TF/IDF 权重最大的关键词，默认值为 20
+     第三个参数：是否同时返回每个关键词的权重
+     第四个参数：词性过滤，默认为空表示不过滤，若提供则仅返回符合词性要求的关键词
+     '''
+     keywords = jieba.analyse.extract_tags(sentence, topK=20, withWeight=False, allowPOS=())
+     
+     
+     (2).是基于 TextRank 算法的关键词抽取。
+     # 1. 新建TextRank实例
+     jieba.analyse.TextRank()
+     # 2. 提取关键词
+     '''
+     第一个参数：待提取关键词的文本
+     第二个参数：返回关键词的数量，重要性从高到低排序
+     第三个参数：是否同时返回每个关键词的权重
+     第四个参数：词性过滤，为空表示不过滤，若提供则仅返回符合词性要求的关键词
+     '''
+     keywords =jieba.analyse.textrank(sentence, topK=20, withWeight=False, allowPOS=(‘ns’, ‘n’, ‘vn’, ‘v’))
+     
+     # 打印结果：
+     for item in keywords:
+         # 分别为关键词和相应的权重
+         print(item[0], item[1])
+     或者
+     for w,t in keywords:
+         print('%s, %s'%(w, t))
+     ```
+
+   - 
+
+4. 
+
+
+
+## 5. 词性标注
+
+
+
+## 6.命名实体识别
