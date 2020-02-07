@@ -258,10 +258,216 @@
 
 4. 
 
+### 4.4 nltk（Natural Language Toolkit）分词
+
+1.  **简介：**
+
+   nltk是一个高效的python构建平台，用来处理自然语言数据。它提供了易于使用的接口，通过这些接口可以访问超过50个语料库和词汇资源（如wordNet），还有一套用于分类、标记化、词干标记、解析和语义推理的文本处理库。
+
+2. **说明：**
+
+   - nltk本身自带了大量的语料，但**大部分是英文的**。
+
+   - nltk自带了很多统计的功能，但针对中文来讲，**分词的工作需要我们手动来完成**。然后再把处理过的文本封装成nltk的“text”对象，之后才能使用nltk进行处理。
+
+     代码举例：
+
+     ```python
+     import jieba
+     import nltk
+     import re
+     word="盗墓不是请客吃饭，不是做文章，不是绘画绣花，不能那样雅致，那样从容不迫，文质彬彬，那样温良恭俭让。"
+     # 去除标点符号
+     cleaned_data = ''.join(re.findall(r'[\u4e00-\u9fa5]', word))
+     # lcut 方法直接返回 list
+     wordlist = jieba.lcut(cleaned_data)
+     # 封装成nltk的“text”对象
+     text = nltk.Text(wordlist)
+     print(text)
+     # 查看单词的上下文
+     text.concordance(word='僵尸', width=20, lines=10)
+     # 搜索共同上下文
+     text.common_contexts(['僵尸', '鬼'])
+     # 统计词频
+     text.count(word='胖子')
+     # 绘制离散图
+     words = ['鬼', '僵尸', '胖子', '老胡']
+     text.dispersion_plot(words)
+     ```
+
+   - **nltk分词基本针对英文的，中文分词主要使用jieba分词**。
+
+   - **下载语料、预训练模型等**（使用前需要首先执行以下代码）。 除了一些个人数据包还可以下载整个集合（使用“all”），或者仅下载书中例子和练习中使用到的数据（使用“book”），或者仅下载没有语法和训练模型的语料库（使用“all-corpora”） .
+
+     ```python
+     import nltk
+     nltk.download()
+     ```
+
+   - 
+
+3. **代码实现：**
+
+   ```python
+   import nltk
+   import re
+   english='H:\\自然语言处理\\Experiment2\\English.txt'
+   with open(english,'r',encoding='utf-8') as file:    
+       u=file.read()
+   str=re.sub('[^\w ]','',u)
+   # 分词
+   print(nltk.word_tokenize(str))
+   # 对分完词的结果进行词性标注
+   print(nltk.pos_tag(nltk.word_tokenize(str)))
+   ```
+
+4. 
+
 
 
 ## 5. 词性标注
 
+### 5.1 简介
+
+1. 词性标注是确定给定句子中的每个词的词性（名词n、动词v、形容词a、副词d、助词u、代词等）并加以标注的过程。
+2. 
+
+### 5.2 词性标注规范
+
+1. 中文领域中尚无统一的标注标准。较为主流的是北大词性标注集合宾州词性标注集。
+
+### 5.3 词性标注方法
+
+1. **方法：**
+
+   - **jieba.posseg**
+
+     示例：
+
+     ```python
+     import jieba.posseg as psg
+     sent = '中文分词是文本处理不可或缺的一步！'
+     seg_list = psg.cut(sent)
+     print(' '.join(['{0}/{1}'.format(w,t) for w,t in seg_list]))
+     结果：
+     中文/nz 分词/n 是/v 文本处理/n 不可或缺/l 的/uj 一步/m ！/x
+     ```
+
+   - **HMM进行词性标注**
+
+     示例：（待完成）
+
+   - **nltk词性标注：**先分词再词性标注
+
+     ```python
+     import nltk
+     import re
+     english='H:\\自然语言处理\\Experiment2\\English.txt'
+     with open(english,'r',encoding='utf-8') as file:
+         u=file.read()
+     str=re.sub('[^\w ]','',u)
+     # 分词
+     print(nltk.word_tokenize(str))
+     # 对分完词的结果进行词性标注
+     print(nltk.pos_tag(nltk.word_tokenize(str)))
+     ```
+
+   - 
+
+2. **注意：**
+
+   - 在使用jieba分词自定义词典时，尽量补充完整信息（词语、词频、词性）。如果缺少词性，则最终且分词的词性标注为"x"。
+
+3. 
+
 
 
 ## 6.命名实体识别
+
+### 6.1 简介
+
+1. 命名实体识别（Named Entities Recognition, NER），是自然语言处理的一个基础任务，是信息抽取、信息检索、机器翻译、问答系统等NLP技术必不可少的组成部分。
+
+2. **NER研究的命名实体**一般分为3大类（实体类、时间类和数字类）和七小类（人名（PER）、地名（LOC）、组织机构名（ORG）、时间、日期、货币和百分比）。其中人名、地名和组织机构名较为复杂。
+
+3. **NER效果评判**（评判一个命名实体是否被正确识别）有两个方面：
+   - 实体的边界是否正确，即确定哪些词属于实体。
+   - 实体的类型是否标注正确，即确定实体是属于人名或组织机构名哪一种实体。
+   
+4. **现状：**NER侧重高召回率，但在信息检索领域，高准确率更重要。
+
+5. **NER难点:**
+
+   - 各类命名实体没有严格的命名规范
+   - 中文命名实体没有类似英文那样明确的单词边界及标志
+   - 中文分词和命名实体识别相互影响
+   - 网络汉语文本实体组成方式更加复杂
+   - 现存标注语料老旧、覆盖面低
+   - 命名实体歧义消岐困难
+
+6. **中文命名实体的难点：**
+
+   - 各类命名实体的数量众多。根据1998年人民日报语料库统计，人名将近2万个，而这些人民大多属于**未登录词**（Out Of Vocabulary, OOV，不在词典中的词，如人名、地名、机构名、一些新词等等）。
+   - 命名实体的构成规律复杂。中文人民分中国人民、日本人名等；机构名种类也繁多。
+   - 嵌套情况复杂。如机构名不仅嵌套了大量的地名，还嵌套了相当数量的机构名。
+   - 长度不确定。主要是机构名长度变化极大，两个字到几十个字范围的都有。  
+
+7. **NER作用：**
+
+   命名实体识别是信息提取、问答系统、语法分析、机器翻译等应用的重要工具。
+
+8. 
+
+### 6.2 NER方法
+
+1. 基于规则的命名实体识别
+   - 利用手工构造规则模板，选用特征包括统计信息、标点符号、关键字、位置词（尾词）、中心词等方法，结合命名实体库，对每条规则进行权重赋值，然后通过实体与规则的相符情况来进行类型判断。即：将文本与规则进行匹配来进行命名实体识别。
+   - 特点：规则往往依赖于具体语言、领域和文本风格，可移植性差、更新维护困难。
+2. 基于统计的命名实体识别
+   - **主要思想**：是基于人工标注的语料，将命名实体识别任务作为序列标注问题来解决。利用语料来学习标注模型，从而对句子的各个位置进行标注。
+   - **主要方法**：隐马尔科夫模型（HMM）、最大熵模型（ME）、支持向量机（SVM）、条件随机场（CRF）。
+   - **制约问题**：该方法对语料库的依赖比较大。
+   - **HMM和CRF比较**：
+     1. 相同点：都可以用来解决序列标注问题
+     2. 不同点1：CRF是在给定观察的标记序列下，计算整个标记序列的联合概率；而HMM是在给定当前状态下，定义下一个状态的分布。
+     3. 不同点2： CRF能够捕捉全局的信息，并能够进行灵活的特征设计，效果要比HMM好不少。
+     4. 不同点3：  参考（ https://blog.csdn.net/qq_42851418/article/details/83269545 ）![img](https://img-blog.csdn.net/2018102309500466?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQyODUxNDE4/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70) 
+     5. 
+   - 
+3. 基于混合方法（规则+统计）的命名实体识别
+   - 目前的主流方法是序列标注方式，即特征模板+CRF。
+4.  基于深度学习方法的命名实体识别
+   - Bi-LSTM
+   - Bi-LSTM+CRF
+5. 
+
+### 6.3 NER实战
+
+1. **nltk.chunk.ne_chunk(tagged)**
+
+   代码示例:
+
+   ```python
+   import nltk
+   text = '钟南山院士奋战在疫情最严重的前线-武汉'
+   tokens = nltk.word_tokenize(text)  #分词  
+   tagged = nltk.pos_tag(tokens)  #词性标注  
+   entities = nltk.chunk.ne_chunk(tagged)  #命名实体识别
+   # 为了方便查看，把命名实体识别的结果以树结构的形式绘制出来
+   from nltk.corpus import treebank
+   t = treebank.parsed_sents('wsj_0001.mrg')[0]
+   t.draw()
+   ```
+
+2. **用 keras 实现NER：**参考（ https://blog.csdn.net/hufei_neo/article/details/90741353 ）
+
+   - 命名实体识别采用的方法：Bi-LSTM+CRF
+   - 
+
+3. **用pytorch实现NER：**参考（https://blog.csdn.net/MaggicalQ/article/details/88980534）
+
+   -  实现不同的模型（包括**HMM**，**CRF**，**Bi-LSTM**，**Bi-LSTM+CRF**）来解决中文命名实体识别问题 。
+
+4. 
+
+## 7. 关键词提取
